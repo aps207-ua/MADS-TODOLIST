@@ -1,6 +1,5 @@
-FROM openjdk:8-jdk-alpine
+FROM eclipse-temurin:8-jdk-alpine
 COPY target/*.jar app.jar
-
 
 # Añadida la opción java.security.egd para evitar que el servidor se cuelgue en Digitalocean
 # al hacer una petición que usa el HttpSession.
