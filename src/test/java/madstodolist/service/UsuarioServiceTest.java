@@ -153,4 +153,39 @@ public class UsuarioServiceTest {
         assertThat(usuario.getEmail()).isEqualTo("user@ua");
         assertThat(usuario.getNombre()).isEqualTo("Usuario Ejemplo");
     }
+
+    @Test
+    public void servicioFindAllDevuelveTodosLosUsuarios() {
+        // GIVEN
+        // Guardamos dos usuarios en la base de datos
+        addUsuarioBD(); // Guarda "user@ua"
+
+        UsuarioData usuario2 = new UsuarioData();
+        usuario2.setEmail("usuario2@ua");
+        usuario2.setNombre("Segundo Usuario");
+        usuario2.setPassword("456");
+        usuarioService.registrar(usuario2);
+
+        // WHEN
+        // Recuperamos todos los usuarios registrados
+        Iterable<UsuarioData> usuarios = usuarioService.findAll();
+
+        // THEN
+        // Verificamos que contenga exactamente 2 elementos con los emails esperados
+        assertThat(usuarios)
+                .hasSize(2)
+                .extracting(UsuarioData::getEmail)
+                .containsExactlyInAnyOrder("user@ua", "usuario2@ua");
+    }
+
+    @Test
+    public void servicioFindAllConBDVaciaDevuelveListaVacia() {
+        // WHEN
+        // Si no hay usuarios en la BD
+        Iterable<UsuarioData> usuarios = usuarioService.findAll();
+
+        // THEN
+        // Devuelve una colección vacía (no nula)
+        assertThat(usuarios).isEmpty();
+    }
 }
