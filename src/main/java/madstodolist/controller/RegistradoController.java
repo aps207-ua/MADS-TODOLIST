@@ -25,4 +25,10 @@ public class RegistradoController {
         model.addAttribute("usuario", usuario);
         return "detallesRegistrado";
     }
+
+    @GetMapping("/registrados")
+    public String listaRegistrados(Model model) {
+        model.addAttribute("usuarios", usuarioService.findAll());
+        return "listaRegistrados";
+    }
 }
