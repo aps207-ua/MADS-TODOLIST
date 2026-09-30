@@ -7,8 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.server.ResponseStatusException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
@@ -98,6 +102,94 @@ public class UsuarioWebTest {
                         .param("password", "12345678"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/registrados"));
+    }
+
+    @Test
+    public void adminPuedeEntrarALaListaDeUsuarios() throws Exception {
+        UsuarioData admin = new UsuarioData();
+        admin.setId(99L);
+        admin.setNombre("Admin");
+        admin.setEmail("admin@ua");
+        admin.setAdmin(true);
+
+        when(usuarioService.login("admin@ua", "12345678"))
+                .thenReturn(UsuarioService.LoginStatus.LOGIN_OK);
+        when(usuarioService.findByEmail("admin@ua"))
+                .thenReturn(admin);
+        when(usuarioService.findById(99L))
+                .thenReturn(admin);
+        when(usuarioService.findAll())
+                .thenReturn(java.util.List.of(admin));
+
+        MvcResult result = this.mockMvc.perform(post("/login")
+                        .param("eMail", "admin@ua")
+                        .param("password", "12345678"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados"))
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
+
+        this.mockMvc.perform(get("/registrados").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Lista de Registrados")));
+    }
+
+    @Test
+    public void noSePuedeEntrarEnDetallesDeOtroUsuarioSiNoEsAdmin() throws Exception {
+        UsuarioData usuarioVisitado = new UsuarioData();
+        usuarioVisitado.setId(2L);
+        usuarioVisitado.setNombre("Otro usuario");
+        usuarioVisitado.setEmail("otro@ua");
+        usuarioVisitado.setAdmin(false);
+
+        UsuarioData usuarioLogeado = new UsuarioData();
+        usuarioLogeado.setId(1L);
+        usuarioLogeado.setNombre("Ana");
+        usuarioLogeado.setEmail("ana@ua");
+        usuarioLogeado.setAdmin(false);
+
+        when(usuarioService.findById(2L)).thenReturn(usuarioVisitado);
+        when(usuarioService.findById(1L)).thenReturn(usuarioLogeado);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+        session.setAttribute("nombreUsuarioLogeado", "Ana");
+        session.setAttribute("esAdmin", false);
+
+        MvcResult result = this.mockMvc.perform(get("/registrados/2").session(session))
+                .andExpect(status().isForbidden())
+                .andReturn();
+
+        assertThat(result.getResolvedException())
+                .isInstanceOf(ResponseStatusException.class);
+        assertThat(((ResponseStatusException) result.getResolvedException()).getReason())
+                .isEqualTo("No autorizado");
+    }
+
+    @Test
+    public void noSePuedeEntrarALaListaSiNoEsAdmin() throws Exception {
+        UsuarioData usuarioLogeado = new UsuarioData();
+        usuarioLogeado.setId(1L);
+        usuarioLogeado.setNombre("Ana");
+        usuarioLogeado.setEmail("ana@ua");
+        usuarioLogeado.setAdmin(false);
+
+        when(usuarioService.findById(1L)).thenReturn(usuarioLogeado);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+        session.setAttribute("nombreUsuarioLogeado", "Ana");
+        session.setAttribute("esAdmin", false);
+
+        MvcResult result = this.mockMvc.perform(get("/registrados").session(session))
+                .andExpect(status().isForbidden())
+                .andReturn();
+
+        assertThat(result.getResolvedException())
+                .isInstanceOf(ResponseStatusException.class);
+        assertThat(((ResponseStatusException) result.getResolvedException()).getReason())
+                .isEqualTo("No autorizado");
     }
 
     @Test
