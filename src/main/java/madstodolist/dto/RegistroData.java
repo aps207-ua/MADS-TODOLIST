@@ -11,6 +11,7 @@ public class RegistroData {
     private String eMail;
     private String password;
     private String nombre;
+    private String rol = "USER";
     @DateTimeFormat(pattern = "dd-MM-yyyy")
     private Date fechaNacimiento;
 
@@ -36,6 +37,14 @@ public class RegistroData {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
     }
 
     public Date getFechaNacimiento() {

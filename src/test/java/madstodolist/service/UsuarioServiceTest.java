@@ -76,6 +76,21 @@ public class UsuarioServiceTest {
     }
 
     @Test
+    public void servicioRegistroUsuarioGuardaAdmin() {
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("admin@ua");
+        usuario.setPassword("12345678");
+        usuario.setAdmin(true);
+
+        UsuarioData usuarioRegistro = usuarioService.registrar(usuario);
+        UsuarioData usuarioGuardado = usuarioService.findByEmail("admin@ua");
+
+        assertThat(usuarioRegistro.isAdmin()).isTrue();
+        assertThat(usuarioGuardado).isNotNull();
+        assertThat(usuarioGuardado.isAdmin()).isTrue();
+    }
+
+    @Test
     public void servicioRegistroUsuarioExcepcionConNullPassword() {
         // WHEN, THEN
         // Si intentamos registrar un usuario con un password null,

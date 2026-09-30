@@ -38,6 +38,13 @@
                             <input id="fechaNacimiento" class="form-control" name="fechaNacimiento"
                                    placeholder="01-12-2019" th:field="*{fechaNacimiento}"/>
                         </div>
+                        <div class="form-group" th:if="${noHayAdmin}">
+                            <label for="rol">Rol</label>
+                            <select id="rol" class="form-control" name="rol" th:field="*{rol}" required>
+                                <option value="USER">Usuario</option>
+                                <option value="ADMIN">Administrador</option>
+                            </select>
+                        </div>
 
                         <button type="submit" class="btn btn-primary">Registro</button>
                         <a class="btn btn-link" href="/login">Ir a login</a>
