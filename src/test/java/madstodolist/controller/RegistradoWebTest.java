@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
@@ -34,10 +35,16 @@ public class RegistradoWebTest {
         usuarioMock.setId(2L);
         usuarioMock.setNombre("Juan Pérez");
         usuarioMock.setEmail("juan@ua.es");
+        usuarioMock.setAdmin(true);
 
         when(usuarioService.findById(2L)).thenReturn(usuarioMock);
 
-        this.mockMvc.perform(get("/registrados/2"))
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 2L);
+        session.setAttribute("nombreUsuarioLogeado", "Juan Pérez");
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/registrados/2").session(session))
                 .andExpect(status().isOk())
                 .andExpect(view().name("detallesRegistrado"))
                 .andExpect(model().attributeExists("usuario"))
@@ -55,12 +62,21 @@ public class RegistradoWebTest {
 
     @Test
     public void listaRegistradosVaciaMuestraMensaje() throws Exception {
-        // GIVEN
-        // El servicio devuelve una lista vacía
+        UsuarioData usuarioAdmin = new UsuarioData();
+        usuarioAdmin.setId(1L);
+        usuarioAdmin.setNombre("Admin");
+        usuarioAdmin.setEmail("admin@ua.es");
+        usuarioAdmin.setAdmin(true);
+
+        when(usuarioService.findById(1L)).thenReturn(usuarioAdmin);
         when(usuarioService.findAll()).thenReturn(Collections.emptyList());
 
-        // WHEN & THEN
-        this.mockMvc.perform(get("/registrados"))
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+        session.setAttribute("nombreUsuarioLogeado", "Admin");
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/registrados").session(session))
                 .andExpect(status().isOk())
                 .andExpect(view().name("listaRegistrados"))
                 .andExpect(model().attributeExists("usuarios"))
@@ -70,7 +86,12 @@ public class RegistradoWebTest {
 
     @Test
     public void listaRegistradosDevuelveVistaYListaDeUsuarios() throws Exception {
-        // GIVEN
+        UsuarioData usuarioAdmin = new UsuarioData();
+        usuarioAdmin.setId(1L);
+        usuarioAdmin.setNombre("Admin");
+        usuarioAdmin.setEmail("admin@ua.es");
+        usuarioAdmin.setAdmin(true);
+
         UsuarioData usuario1 = new UsuarioData();
         usuario1.setId(1L);
         usuario1.setNombre("Juan Pérez");
@@ -83,10 +104,15 @@ public class RegistradoWebTest {
 
         List<UsuarioData> usuariosMock = Arrays.asList(usuario1, usuario2);
 
+        when(usuarioService.findById(1L)).thenReturn(usuarioAdmin);
         when(usuarioService.findAll()).thenReturn(usuariosMock);
 
-        // WHEN & THEN
-        this.mockMvc.perform(get("/registrados"))
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+        session.setAttribute("nombreUsuarioLogeado", "Admin");
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/registrados").session(session))
                 .andExpect(status().isOk())
                 .andExpect(view().name("listaRegistrados"))
                 .andExpect(model().attributeExists("usuarios"))
