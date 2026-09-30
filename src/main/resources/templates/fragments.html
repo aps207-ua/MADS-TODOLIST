@@ -20,6 +20,12 @@
                 <a class="nav-link" th:href="@{/usuarios/{id}/tareas(id=${session.idUsuarioLogeado})}">Tareas</a>
             </li>
         </ul>
+        <ul class="navbar-nav mr-auto" th:if="${session.esAdmin != null and session.esAdmin}">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/registrados}">Lista de Registrados</a>
+            </li>
+        </ul>
+
 
         <ul class="navbar-nav ml-auto" th:if="${session.idUsuarioLogeado != null}">
             <li class="nav-item dropdown">
