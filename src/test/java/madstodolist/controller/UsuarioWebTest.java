@@ -10,7 +10,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -58,6 +60,44 @@ public class UsuarioWebTest {
                         .param("password", "12345678"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/usuarios/1/tareas"));
+    }
+
+    @Test
+    public void formularioRegistroMuestraSelectorSiNoHayAdmin() throws Exception {
+        when(usuarioService.AreThereAnyAdmins()).thenReturn(false);
+
+        this.mockMvc.perform(get("/registro"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"rol\"")));
+    }
+
+    @Test
+    public void formularioRegistroOcultaSelectorSiYaExisteAdmin() throws Exception {
+        when(usuarioService.AreThereAnyAdmins()).thenReturn(true);
+
+        this.mockMvc.perform(get("/registro"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("id=\"rol\""))));
+    }
+
+    @Test
+    public void servicioLoginUsuarioAdminRedirigeALaListaDeUsuarios() throws Exception {
+        UsuarioData admin = new UsuarioData();
+        admin.setId(99L);
+        admin.setNombre("Admin");
+        admin.setEmail("admin@ua");
+        admin.setAdmin(true);
+
+        when(usuarioService.login("admin@ua", "12345678"))
+                .thenReturn(UsuarioService.LoginStatus.LOGIN_OK);
+        when(usuarioService.findByEmail("admin@ua"))
+                .thenReturn(admin);
+
+        this.mockMvc.perform(post("/login")
+                        .param("eMail", "admin@ua")
+                        .param("password", "12345678"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados"));
     }
 
     @Test
