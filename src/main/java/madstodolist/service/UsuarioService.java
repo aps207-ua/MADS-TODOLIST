@@ -81,4 +81,14 @@ public class UsuarioService {
                 .map(usuario -> modelMapper.map(usuario, UsuarioData.class))
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public boolean AreThereAnyUsers() {
+        for (Usuario usuario : usuarioRepository.findAll()) {
+            if (usuario.isAdmin()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

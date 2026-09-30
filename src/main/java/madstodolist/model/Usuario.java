@@ -21,6 +21,8 @@ public class Usuario implements Serializable {
     private String email;
     private String nombre;
     private String password;
+    @NotNull
+    private boolean admin;
     @Column(name = "fecha_nacimiento")
     @Temporal(TemporalType.DATE)
     private Date fechaNacimiento;
@@ -37,6 +39,7 @@ public class Usuario implements Serializable {
     // Constructor público con los atributos obligatorios. En este caso el correo electrónico.
     public Usuario(String email) {
         this.email = email;
+        this.admin = false;
     }
 
     // Getters y setters atributos básicos
@@ -81,6 +84,14 @@ public class Usuario implements Serializable {
         this.fechaNacimiento = fechaNacimiento;
     }
 
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
+    }
+
     // Getters y setters de la relación
 
     public Set<Tarea> getTareas() {
@@ -108,7 +119,7 @@ public class Usuario implements Serializable {
             // Si tenemos los ID, comparamos por ID
             return Objects.equals(id, usuario.id);
         // si no comparamos por campos obligatorios
-        return email.equals(usuario.email);
+        return email.equals(usuario.email) && admin == usuario.admin;
     }
 
     @Override
