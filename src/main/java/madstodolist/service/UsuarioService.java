@@ -83,7 +83,7 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public boolean AreThereAnyUsers() {
+    public boolean AreThereAnyAdmins() {
         for (Usuario usuario : usuarioRepository.findAll()) {
             if (usuario.isAdmin()) {
                 return true;
