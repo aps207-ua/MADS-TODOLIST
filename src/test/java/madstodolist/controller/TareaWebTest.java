@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -85,6 +86,25 @@ public class TareaWebTest {
                         containsString("Lavar coche"),
                         containsString("Renovar DNI")
                 ))));
+    }
+
+    @Test
+    public void listaTareasMuestraNavbarConDesplegableDeUsuario() throws Exception {
+        // GIVEN
+        Long usuarioId = addUsuarioTareasBD().get("usuarioId");
+
+        when(managerUserSession.usuarioLogeado()).thenReturn(usuarioId);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", usuarioId);
+        session.setAttribute("nombreUsuarioLogeado", "user@ua");
+
+        // WHEN & THEN
+        this.mockMvc.perform(get("/usuarios/" + usuarioId + "/tareas").session(session))
+                .andExpect(content().string(containsString("user@ua")))
+                .andExpect(content().string(containsString("Cuenta")))
+                .andExpect(content().string(containsString("Cerrar sesión")))
+                .andExpect(content().string(containsString("Tareas")));
     }
 
     @Test
