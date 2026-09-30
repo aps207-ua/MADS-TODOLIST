@@ -22,6 +22,7 @@ public class Usuario implements Serializable {
     private String nombre;
     private String password;
     @NotNull
+    @Column(nullable = false)
     private boolean admin;
     @Column(name = "fecha_nacimiento")
     @Temporal(TemporalType.DATE)

@@ -62,7 +62,7 @@ public class LoginController {
     public String registroForm(Model model) {
         model.addAttribute("registroData", new RegistroData());
         model.addAttribute("noHayAdmin", !usuarioService.AreThereAnyAdmins());
-        
+
         return "formRegistro";
     }
 
@@ -84,6 +84,7 @@ public class LoginController {
         usuario.setPassword(registroData.getPassword());
         usuario.setFechaNacimiento(registroData.getFechaNacimiento());
         usuario.setNombre(registroData.getNombre());
+        usuario.setAdmin("ADMIN".equalsIgnoreCase(registroData.getRol()));
 
         usuarioService.registrar(usuario);
         return "redirect:/login";
