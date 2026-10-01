@@ -19,7 +19,7 @@ public class UsuarioService {
 
     Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
-    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD}
+    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD, USER_BLOCKED}
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -31,6 +31,8 @@ public class UsuarioService {
         Optional<Usuario> usuario = usuarioRepository.findByEmail(eMail);
         if (!usuario.isPresent()) {
             return LoginStatus.USER_NOT_FOUND;
+        } else if (usuario.get().isBloqueado()) {
+            return LoginStatus.USER_BLOCKED;
         } else if (!usuario.get().getPassword().equals(password)) {
             return LoginStatus.ERROR_PASSWORD;
         } else {
@@ -80,6 +82,34 @@ public class UsuarioService {
         return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
                 .map(usuario -> modelMapper.map(usuario, UsuarioData.class))
                 .toList();
+    }
+
+    @Transactional
+    public UsuarioData cambiarBloqueo(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+        if (usuario == null) {
+            throw new UsuarioServiceException("El usuario " + usuarioId + " no existe");
+        }
+        return actualizarBloqueo(usuarioId, !usuario.isBloqueado());
+    }
+
+    @Transactional
+    public UsuarioData bloquear(Long usuarioId) {
+        return actualizarBloqueo(usuarioId, true);
+    }
+
+    @Transactional
+    public UsuarioData habilitar(Long usuarioId) {
+        return actualizarBloqueo(usuarioId, false);
+    }
+
+    private UsuarioData actualizarBloqueo(Long usuarioId, boolean bloqueado) {
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+        if (usuario == null) {
+            throw new UsuarioServiceException("El usuario " + usuarioId + " no existe");
+        }
+        usuario.setBloqueado(bloqueado);
+        return modelMapper.map(usuarioRepository.save(usuario), UsuarioData.class);
     }
 
     @Transactional(readOnly = true)

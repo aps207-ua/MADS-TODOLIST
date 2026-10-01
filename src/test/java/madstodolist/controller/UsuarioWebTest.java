@@ -132,7 +132,41 @@ public class UsuarioWebTest {
 
         this.mockMvc.perform(get("/registrados").session(session))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Lista de Registrados")));
+                .andExpect(content().string(containsString("Lista de Registrados")))
+                .andExpect(content().string(containsString("/registrados/99/bloquear")))
+                .andExpect(content().string(containsString("Bloquear")));
+    }
+
+    @Test
+    public void servicioLoginUsuarioBloqueadoMuestraError() throws Exception {
+        when(usuarioService.login("bloqueado@ua", "12345678"))
+                .thenReturn(UsuarioService.LoginStatus.USER_BLOCKED);
+
+        this.mockMvc.perform(post("/login")
+                        .param("eMail", "bloqueado@ua")
+                        .param("password", "12345678"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("El usuario está bloqueado")));
+    }
+
+    @Test
+    public void adminPuedeCambiarBloqueoDeUsuario() throws Exception {
+        UsuarioData admin = new UsuarioData();
+        admin.setId(99L);
+        admin.setAdmin(true);
+        when(usuarioService.findById(99L)).thenReturn(admin);
+
+        this.mockMvc.perform(post("/registrados/1/bloqueo")
+                        .session(new MockHttpSession()))
+                .andExpect(status().isForbidden());
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 99L);
+        when(usuarioService.cambiarBloqueo(1L)).thenReturn(new UsuarioData());
+
+        this.mockMvc.perform(post("/registrados/1/bloqueo").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados"));
     }
 
     @Test
