@@ -4,7 +4,8 @@
 <head th:replace="fragments :: head (titulo='Login')"></head>
 
 <body>
-<div class="container-fluid">
+<div class="container-fluid auth-page">
+    <div class="auth-content">
 
     <div class="row justify-content-center mb-3">
         <div class="col-auto">
@@ -37,6 +38,7 @@
         <div class="col-6">
             <div class="alert alert-danger" th:if="${error != null}" th:text="${error}"></div>
         </div>
+    </div>
     </div>
 </div>
 
