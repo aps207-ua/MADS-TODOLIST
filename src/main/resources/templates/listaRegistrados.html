@@ -12,6 +12,7 @@
             <th scope="col">ID</th>
             <th scope="col">Nombre</th>
             <th scope="col">Email</th>
+            <th scope="col">Estado</th>
             <th scope="col" class="text-center">Acciones</th>
         </tr>
         </thead>
@@ -21,17 +22,31 @@
             <td th:text="${usuario.id}">1</td>
             <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
             <td th:text="${usuario.email}">ejemplo@email.com</td>
+            <td>
+                <span th:if="${usuario.bloqueado}" class="text-danger">Bloqueado</span>
+                <span th:unless="${usuario.bloqueado}" class="text-success">Habilitado</span>
+            </td>
             <td class="text-center">
                 <!-- Botón que redirige a /registrados/{id} -->
                 <a th:href="@{/registrados/{id}(id=${usuario.id})}"
                    class="btn btn-primary btn-sm">
                     Ver más detalles
                 </a>
+                <form th:if="${usuario.bloqueado}" th:action="@{/registrados/{id}/habilitar(id=${usuario.id})}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        Habilitar
+                    </button>
+                </form>
+                <form th:unless="${usuario.bloqueado}" th:action="@{/registrados/{id}/bloquear(id=${usuario.id})}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        Bloquear
+                    </button>
+                </form>
             </td>
         </tr>
         <!-- Mensaje opcional si la lista está vacía -->
         <tr th:if="${#lists.isEmpty(usuarios)}">
-            <td colspan="4" class="text-center text-muted">No hay usuarios registrados.</td>
+            <td colspan="5" class="text-center text-muted">No hay usuarios registrados.</td>
         </tr>
         </tbody>
     </table>

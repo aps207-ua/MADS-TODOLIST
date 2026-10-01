@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpSession;
@@ -59,5 +60,34 @@ public class RegistradoController {
 
         model.addAttribute("usuarios", usuarioService.findAll());
         return "listaRegistrados";
+    }
+
+    @PostMapping("/registrados/{id}/bloqueo")
+    public String cambiarBloqueo(@PathVariable(value="id") Long id) {
+        comprobarAdministrador();
+        usuarioService.cambiarBloqueo(id);
+        return "redirect:/registrados";
+    }
+
+    @PostMapping("/registrados/{id}/bloquear")
+    public String bloquear(@PathVariable(value="id") Long id) {
+        comprobarAdministrador();
+        usuarioService.bloquear(id);
+        return "redirect:/registrados";
+    }
+
+    @PostMapping("/registrados/{id}/habilitar")
+    public String habilitar(@PathVariable(value="id") Long id) {
+        comprobarAdministrador();
+        usuarioService.habilitar(id);
+        return "redirect:/registrados";
+    }
+
+    private void comprobarAdministrador() {
+        Long usuarioLogeado = managerUserSession.usuarioLogeado();
+        UsuarioData usuarioActual = usuarioLogeado == null ? null : usuarioService.findById(usuarioLogeado);
+        if (usuarioActual == null || !usuarioActual.isAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
     }
 }
