@@ -1,4 +1,4 @@
-FROM eclipse-temurin:8-jdk-alpine
+FROM eclipse-temurin:17-jre-alpine
 COPY target/*.jar app.jar
 
 # Añadida la opción java.security.egd para evitar que el servidor se cuelgue en Digitalocean
