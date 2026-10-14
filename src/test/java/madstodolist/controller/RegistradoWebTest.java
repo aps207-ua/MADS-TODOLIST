@@ -45,7 +45,7 @@ public class RegistradoWebTest {
         session.setAttribute("esAdmin", true);
 
         this.mockMvc.perform(get("/registrados/2").session(session))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(view().name("detallesRegistrado"))
                 .andExpect(model().attributeExists("usuario"))
                 .andExpect(model().attribute("usuario", usuarioMock))
