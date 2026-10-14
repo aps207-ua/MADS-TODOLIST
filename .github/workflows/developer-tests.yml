@@ -2,6 +2,9 @@ name: Tests
 
 on: push
 
+permissions:
+  contents: read
+
 jobs:
   # El nombre del job es launch-test
   launch-tests:
