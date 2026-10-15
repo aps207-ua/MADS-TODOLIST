@@ -1,16 +1,26 @@
 package madstodolist.model;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.io.Serializable;
 
-public class Equipo implements Serializable{
-    private String name;
+@Entity
+public class Equipo implements Serializable {
 
-    public Equipo(String name){
-        this.name=name;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String nombre;
+
+    public Equipo(String nombre) {this.nombre = nombre;}
+
+    public Equipo() {
+
     }
-
     public String getNombre() {
-        return name;
+        return nombre;
     }
-
 }

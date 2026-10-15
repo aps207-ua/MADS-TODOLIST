@@ -2,13 +2,10 @@ name: Integration tests
 
 on: push
 
-permissions:
-  contents: read
-
 jobs:
   container-job:
     runs-on: ubuntu-latest
-    container: eclipse-temurin:17-jdk-alpine
+    container: openjdk:8-jdk-alpine
     services:
       # Etiqueta usada para acceder al contenedor del servicio
       postgres:
@@ -29,6 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Launch tests with Maven
-        run: ./mvnw test -D spring.profiles.active=postgres
+        run:  ./mvnw test -D spring.profiles.active=postgres
         env:
           POSTGRES_HOST: postgres
