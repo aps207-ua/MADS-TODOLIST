@@ -3,9 +3,7 @@ package madstodolist.model;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "equipos" )
@@ -45,6 +43,42 @@ public class Equipo implements Serializable {
         // JPA/Hibernate no lo hace automáticamente
         this.getUsuarios().add(usuario);
         usuario.getEquipos().add(this);
+    }
+
+    public static List<Equipo> ordenarPorNombre (List<Equipo> equipoList){
+        int size = equipoList.size();
+
+        // 1. Construir el Max-Heap
+        for (int i = size / 2 - 1; i >= 0; i--) {
+            heapify(equipoList, size, i);
+        }
+
+        // 2. Extraer elementos uno a uno
+        for (int i = size - 1; i >= 0; i--) {
+            Collections.swap(equipoList, 0, i);
+            heapify(equipoList, i, 0);
+        }
+
+        return equipoList;
+    }
+
+    public static void heapify(List<Equipo> arr, int size, int i) {
+        int largest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+
+        if (left < size && arr.get(left).nombre.compareTo(arr.get(largest).nombre) > 0) {
+            largest = left;
+        }
+
+        if (right < size && arr.get(right).nombre.compareTo(arr.get(largest).nombre) > 0) {
+            largest = right;
+        }
+
+        if (largest != i) {
+            Collections.swap(arr, i, largest);
+            heapify(arr, size, largest);
+        }
     }
 
 
