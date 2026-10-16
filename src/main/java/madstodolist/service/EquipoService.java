@@ -5,6 +5,7 @@ import madstodolist.dto.UsuarioData;
 import madstodolist.model.Equipo;
 import madstodolist.model.Usuario;
 import madstodolist.repository.EquipoRepository;
+import madstodolist.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,8 @@ public class EquipoService {
     private EquipoRepository equipoRepository;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Transactional
     public EquipoData crearEquipo(String nombre) {
@@ -70,6 +73,39 @@ public class EquipoService {
         for(Equipo equipo : equiposLista){
             equipoDataList.add(modelMapper.map(equipo, EquipoData.class));
         }
+        return equipoDataList;
+    }
+
+    @Transactional
+    public void añadirUsuarioAEquipo(Long equipoID, Long usuarioID){
+        Equipo equipo = equipoRepository.findById(equipoID).orElse(null);
+        if (equipo == null) {
+            return;
+        }
+
+        Usuario usuario = usuarioRepository.findById(usuarioID).orElse(null);
+        if (usuario == null){
+            return;
+        }
+        equipo.addUsuario(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EquipoData> equiposUsuario(Long usuarioID) {
+        Usuario usuario = usuarioRepository.findById(usuarioID).orElse(null);
+        if (usuario == null) {
+            return new ArrayList<>();
+        }
+        
+        List<Equipo> equipos = new ArrayList<>(usuario.getEquipos());
+
+        equipos = Equipo.ordenarPorNombre(equipos);
+
+        List<EquipoData> equipoDataList = new ArrayList<>();
+        for (Equipo equipo : equipos) {
+            equipoDataList.add(modelMapper.map(equipo, EquipoData.class));
+        }
+
         return equipoDataList;
     }
 }

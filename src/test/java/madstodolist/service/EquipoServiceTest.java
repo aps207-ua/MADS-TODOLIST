@@ -1,5 +1,6 @@
 package madstodolist.service;
 
+import madstodolist.dto.UsuarioData;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.jdbc.Sql;
 import madstodolist.dto.EquipoData;
@@ -15,6 +16,8 @@ public class EquipoServiceTest {
 
     @Autowired
     EquipoService equipoService;
+    @Autowired
+    UsuarioService usuarioService;
 
     @Test
     public void crearRecuperarEquipo() {
@@ -43,4 +46,29 @@ public class EquipoServiceTest {
         assertThat(equipos.get(0).getNombre()).isEqualTo("Proyecto AAA");
         assertThat(equipos.get(1).getNombre()).isEqualTo("Proyecto BBB");
     }
+
+    @Test
+    public void recuperarEquiposDeUsuario() {
+        // GIVEN
+        // Un usuario y dos equipos en la base de datos
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("user@ua");
+        usuario.setPassword("123");
+        usuario = usuarioService.registrar(usuario);
+        EquipoData equipo1 = equipoService.crearEquipo("Proyecto 1");
+        EquipoData equipo2 = equipoService.crearEquipo("Proyecto 2");
+        equipoService.añadirUsuarioAEquipo(equipo1.getId(), usuario.getId());
+        equipoService.añadirUsuarioAEquipo(equipo2.getId(), usuario.getId());
+
+        // WHEN
+        // Recuperamos los equipos del usuario
+        List<EquipoData> equipos = equipoService.equiposUsuario(usuario.getId());
+
+        // THEN
+        // El usuario pertenece a los dos equipos
+        assertThat(equipos).hasSize(2);
+        assertThat(equipos.get(0).getNombre()).isEqualTo("Proyecto 1");
+        assertThat(equipos.get(1).getNombre()).isEqualTo("Proyecto 2");
+    }
+
 }
