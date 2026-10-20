@@ -56,7 +56,7 @@ public class EquipoService {
         logger.debug("Recuperando equipo con id "+id+".");
 
         Equipo equipo= equipoRepository.findById(id).orElse(null);
-        if (equipo == null) return null;
+        if (equipo == null) throw new EquipoServiceException("Equipo con id "+id+" no encontrado");
         else {
             return modelMapper.map(equipo, EquipoData.class);
         }
@@ -80,12 +80,12 @@ public class EquipoService {
     public void añadirUsuarioAEquipo(Long equipoID, Long usuarioID){
         Equipo equipo = equipoRepository.findById(equipoID).orElse(null);
         if (equipo == null) {
-            return;
+            throw new EquipoServiceException("Equipo con id "+equipoID+" no encontrado");
         }
 
         Usuario usuario = usuarioRepository.findById(usuarioID).orElse(null);
         if (usuario == null){
-            return;
+            throw new EquipoServiceException("Usuario con id "+usuarioID+" no encontrado");
         }
         equipo.addUsuario(usuario);
     }
@@ -94,7 +94,7 @@ public class EquipoService {
     public List<EquipoData> equiposUsuario(Long usuarioID) {
         Usuario usuario = usuarioRepository.findById(usuarioID).orElse(null);
         if (usuario == null) {
-            return new ArrayList<>();
+            throw new EquipoServiceException("Usuario con id "+usuarioID+" no encontrado");
         }
         
         List<Equipo> equipos = new ArrayList<>(usuario.getEquipos());
@@ -108,4 +108,22 @@ public class EquipoService {
 
         return equipoDataList;
     }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioData> usuariosEquipo(Long equipoID) {
+        Equipo equipo = equipoRepository.findById(equipoID).orElse(null);
+        if (equipo == null){
+            throw new EquipoServiceException("Equipo con id "+ equipoID+" no encontrado");
+        }
+
+        List<Usuario> usuarios= new ArrayList<>(equipo.getUsuarios());
+
+        List<UsuarioData> usuarioDataList = new ArrayList<>();
+        for(Usuario usuario: usuarios){
+            usuarioDataList.add(modelMapper.map(usuario, UsuarioData.class));
+        }
+        return usuarioDataList;
+    }
+
+
 }
