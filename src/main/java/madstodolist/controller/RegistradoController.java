@@ -2,6 +2,7 @@ package madstodolist.controller;
 
 import madstodolist.authentication.ManagerUserSession;
 import madstodolist.dto.UsuarioData;
+import madstodolist.service.EquipoService;
 import madstodolist.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,9 @@ public class RegistradoController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private EquipoService equipoService;
 
     @Autowired
     private ManagerUserSession managerUserSession;
@@ -58,6 +62,7 @@ public class RegistradoController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
         }
 
+        // Pasa la lista de usuarios al modelo
         model.addAttribute("usuarios", usuarioService.findAll());
         return "listaRegistrados";
     }
