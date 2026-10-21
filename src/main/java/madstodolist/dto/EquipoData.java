@@ -1,10 +1,13 @@
 package madstodolist.dto;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class EquipoData {
     private Long id;
     private String nombre;
+    private List<UsuarioData> usuarios = new ArrayList<>();
 
     public void setId(Long id) {
         this.id = id;
@@ -20,6 +23,14 @@ public class EquipoData {
 
     public String getNombre() {
         return nombre;
+    }
+
+    public List<UsuarioData> getUsuarios() {
+        return usuarios;
+    }
+
+    public void setUsuarios(List<UsuarioData> usuarios) {
+        this.usuarios = (usuarios != null) ? usuarios : new ArrayList<>();
     }
 
     @Override

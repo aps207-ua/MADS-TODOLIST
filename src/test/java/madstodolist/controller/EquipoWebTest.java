@@ -17,8 +17,10 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -72,7 +74,10 @@ public class EquipoWebTest {
                 .andExpect(model().attributeExists("equipos"))
                 .andExpect(model().attribute("equipos", equiposMock))
                 .andExpect(content().string(containsString("Proyecto Alpha")))
-                .andExpect(content().string(containsString("Proyecto Beta")));
+                .andExpect(content().string(containsString("Proyecto Beta")))
+                .andExpect(content().string(containsString("collapse-equipo-1")))
+                .andExpect(content().string(containsString("Ver Usuarios")))
+                .andExpect(content().string(containsString("data-toggle=\"collapse\"")));
     }
 
     @Test
@@ -91,12 +96,51 @@ public class EquipoWebTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("formEquipos"))
                 .andExpect(model().attributeExists("equipos"))
-                .andExpect(model().attribute("equipos", Collections.emptyList()));
+                .andExpect(model().attribute("equipos", Collections.emptyList()))
+                .andExpect(content().string(containsString("No hay equipos creados.")));
     }
 
     @Test
     public void listaEquiposSinUsuarioLogeadoDevuelve403() throws Exception {
         this.mockMvc.perform(get("/equipos"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void crearEquipoRedirigeAEquipos() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+
+        this.mockMvc.perform(post("/equipos/crear")
+                        .param("nombre", "Nuevo Equipo")
+                        .session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos"));
+
+        verify(equipoService).crearEquipo("Nuevo Equipo");
+    }
+
+    @Test
+    public void unirseAEquipoRedirigeAEquipos() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+
+        this.mockMvc.perform(post("/equipos/1/unirse").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos"));
+
+        verify(equipoService).añadirUsuarioAEquipo(1L, 1L);
+    }
+
+    @Test
+    public void salirDeEquipoRedirigeAEquipos() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+
+        this.mockMvc.perform(post("/equipos/1/salir").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos"));
+
+        verify(equipoService).eliminarUsuarioDelEquipo(1L, 1L);
     }
 }

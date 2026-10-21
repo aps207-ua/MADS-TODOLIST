@@ -33,8 +33,8 @@
                     <!-- Botón para desplegar/contraer equipos del usuario -->
                     <button class="btn btn-outline-primary btn-sm"
                             type="button"
-                            data-bs-toggle="collapse"
-                            th:data-bs-target="'#collapse-usuario-' + ${usuario.id}"
+                            data-toggle="collapse"
+                            th:attr="data-target='#collapse-usuario-' + ${usuario.id}"
                             aria-expanded="false">
                         Ver Equipos
                     </button>
