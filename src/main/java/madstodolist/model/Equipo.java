@@ -81,6 +81,11 @@ public class Equipo implements Serializable {
         }
     }
 
+    public void removeUsuario(Usuario usuario) {
+        this.getUsuarios().remove(usuario);
+        usuario.getEquipos().remove(this);
+    }
+
 
     @Override
     public int hashCode() {return Objects.hashCode(nombre);}

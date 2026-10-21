@@ -125,4 +125,18 @@ public class EquipoService {
         }
         return usuarioDataList;
     }
+
+    public void eliminarUsuarioDelEquipo(Long equipoID, Long usuarioID) {
+        Equipo equipo = equipoRepository.findById(equipoID).orElse(null);
+        if (equipo == null) {
+            throw new EquipoServiceException("Equipo con id " + equipoID + " no encontrado");
+        }
+
+        Usuario usuario = usuarioRepository.findById(usuarioID).orElse(null);
+        if (usuario == null) {
+            throw new EquipoServiceException("Usuario con id " + usuarioID + " no encontrado");
+        }
+
+        equipo.removeUsuario(usuario);
+    }
 }
