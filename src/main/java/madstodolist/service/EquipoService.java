@@ -126,17 +126,17 @@ public class EquipoService {
         return usuarioDataList;
     }
 
-    public void eliminarUsuarioDelEquipo(Long equipoID, Long usuarioID) {
-        Equipo equipo = equipoRepository.findById(equipoID).orElse(null);
-        if (equipo == null) {
-            throw new EquipoServiceException("Equipo con id " + equipoID + " no encontrado");
-        }
+    @Transactional
+    public void eliminarUsuarioDelEquipo(Long equipoId, Long usuarioId) {
+        Equipo equipo = equipoRepository.findById(equipoId)
+                .orElseThrow(() -> new EquipoServiceException("Equipo no encontrado"));
 
-        Usuario usuario = usuarioRepository.findById(usuarioID).orElse(null);
-        if (usuario == null) {
-            throw new EquipoServiceException("Usuario con id " + usuarioID + " no encontrado");
-        }
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new EquipoServiceException("Usuario no encontrado"));
 
-        equipo.removeUsuario(usuario);
+        if (!equipo.getUsuarios().contains(usuario)) {
+            throw new EquipoServiceException("El usuario no pertenece al equipo");
+        }
+         equipo.removeUsuario(usuario);
     }
 }
