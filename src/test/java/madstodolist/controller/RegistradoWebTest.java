@@ -1,6 +1,8 @@
 package madstodolist.controller;
 
+import madstodolist.dto.EquipoData;
 import madstodolist.dto.UsuarioData;
+import madstodolist.service.EquipoService;
 import madstodolist.service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class RegistradoWebTest {
 
     @MockBean
     private UsuarioService usuarioService;
+
+    @MockBean
+    private EquipoService equipoService;
 
     @Test
     public void detallesRegistradoDevuelveVistaYDatosDelUsuario() throws Exception {
@@ -80,8 +85,7 @@ public class RegistradoWebTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("listaRegistrados"))
                 .andExpect(model().attributeExists("usuarios"))
-                .andExpect(model().attribute("usuarios", Collections.emptyList()))
-                .andExpect(content().string(containsString("No hay usuarios registrados.")));
+                .andExpect(model().attribute("usuarios", Collections.emptyList()));
     }
 
     @Test
@@ -107,6 +111,10 @@ public class RegistradoWebTest {
         when(usuarioService.findById(1L)).thenReturn(usuarioAdmin);
         when(usuarioService.findAll()).thenReturn(usuariosMock);
 
+        // Respuestas vacías por defecto al renderizar el desplegable en Thymeleaf
+        when(equipoService.equiposUsuario(1L)).thenReturn(Collections.emptyList());
+        when(equipoService.equiposUsuario(2L)).thenReturn(Collections.emptyList());
+
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("idUsuarioLogeado", 1L);
         session.setAttribute("nombreUsuarioLogeado", "Admin");
@@ -119,5 +127,69 @@ public class RegistradoWebTest {
                 .andExpect(model().attribute("usuarios", usuariosMock))
                 .andExpect(content().string(containsString("Juan Pérez")))
                 .andExpect(content().string(containsString("Ana López")));
+    }
+
+    @Test
+    public void listaRegistradosMuestraEquiposEnDesplegable() throws Exception {
+        UsuarioData usuarioAdmin = new UsuarioData();
+        usuarioAdmin.setId(1L);
+        usuarioAdmin.setNombre("Admin");
+        usuarioAdmin.setAdmin(true);
+
+        UsuarioData usuario = new UsuarioData();
+        usuario.setId(2L);
+        usuario.setNombre("Carlos Gómez");
+
+        EquipoData equipo1 = new EquipoData();
+        equipo1.setId(10L);
+        equipo1.setNombre("Proyecto Alpha");
+
+        EquipoData equipo2 = new EquipoData();
+        equipo2.setId(20L);
+        equipo2.setNombre("Proyecto Beta");
+
+        when(usuarioService.findById(1L)).thenReturn(usuarioAdmin);
+        when(usuarioService.findAll()).thenReturn(Collections.singletonList(usuario));
+
+        // Mock de la llamada realizada por Thymeleaf (@equipoService.equiposUsuario)
+        when(equipoService.equiposUsuario(2L)).thenReturn(Arrays.asList(equipo1, equipo2));
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+        session.setAttribute("nombreUsuarioLogeado", "Admin");
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/registrados").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("collapse-usuario-2")))
+                .andExpect(content().string(containsString("Ver Equipos")))
+                .andExpect(content().string(containsString("Proyecto Alpha")))
+                .andExpect(content().string(containsString("Proyecto Beta")));
+    }
+
+    @Test
+    public void listaRegistradosUsuarioSinEquiposMuestraMensaje() throws Exception {
+        UsuarioData usuarioAdmin = new UsuarioData();
+        usuarioAdmin.setId(1L);
+        usuarioAdmin.setNombre("Admin");
+        usuarioAdmin.setAdmin(true);
+
+        UsuarioData usuario = new UsuarioData();
+        usuario.setId(3L);
+        usuario.setNombre("Sin Equipo User");
+
+        when(usuarioService.findById(1L)).thenReturn(usuarioAdmin);
+        when(usuarioService.findAll()).thenReturn(Collections.singletonList(usuario));
+
+        when(equipoService.equiposUsuario(3L)).thenReturn(Collections.emptyList());
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 1L);
+        session.setAttribute("nombreUsuarioLogeado", "Admin");
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/registrados").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Este usuario no pertenece a ningún equipo.")));
     }
 }

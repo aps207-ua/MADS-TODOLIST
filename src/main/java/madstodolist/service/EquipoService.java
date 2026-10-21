@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.events.Event;
 
+import java.nio.ReadOnlyBufferException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -124,6 +125,4 @@ public class EquipoService {
         }
         return usuarioDataList;
     }
-
-
 }
