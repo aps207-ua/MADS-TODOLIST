@@ -43,34 +43,17 @@
                                 <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Email</th>
-                                <th>Estado</th>
-                                <th class="text-center">Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="usuario : ${equipo.usuarios}">
+                            <tr th:each="usuario : ${@equipoService.usuariosEquipo(equipo.id)}">
                                 <td th:text="${usuario.id}">1</td>
                                 <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
                                 <td th:text="${usuario.email}">ejemplo@email.com</td>
-                                <td>
-                                    <span th:if="${usuario.bloqueado}" class="text-danger">Bloqueado</span>
-                                    <span th:unless="${usuario.bloqueado}" class="text-success">Habilitado</span>
-                                </td>
-                                <td class="text-center">
-                                    <a th:href="@{/registrados/{id}(id=${usuario.id})}" class="btn btn-primary btn-sm">
-                                        Ver más detalles
-                                    </a>
-                                    <form th:if="${usuario.bloqueado}" th:action="@{/registrados/{id}/habilitar(id=${usuario.id})}" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-success btn-sm">Habilitar</button>
-                                    </form>
-                                    <form th:unless="${usuario.bloqueado}" th:action="@{/registrados/{id}/bloquear(id=${usuario.id})}" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-warning btn-sm">Bloquear</button>
-                                    </form>
-                                </td>
                             </tr>
                             <!-- Mensaje cuando el equipo no tiene usuarios -->
-                            <tr th:if="${#lists.isEmpty(equipo.usuarios)}">
-                                <td colspan="5" class="text-muted text-center py-2">Sin usuarios registrados en este equipo.</td>
+                            <tr th:if="${#lists.isEmpty(@equipoService.usuariosEquipo(equipo.id))}">
+                                <td colspan="3" class="text-muted text-center py-2">Sin usuarios registrados en este equipo.</td>
                             </tr>
                             </tbody>
                         </table>
