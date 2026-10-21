@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments :: head (titulo='Lista de Equipos')}"></head>
+<body>
+<div class="container mt-5">
+    <div th:replace="~{fragments :: navbar}"></div>
+    <h2 class="mb-4">Equipos</h2>
+
+    <table class="table table-striped align-middle">
+        <thead class="table-dark">
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Nombre del Equipo</th>
+            <th scope="col" class="text-center">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Bloque contenedor por equipo -->
+        <th:block th:each="equipo : ${equipos}">
+            <!-- Fila principal del Equipo -->
+            <tr>
+                <td th:text="${equipo.id}">1</td>
+                <td th:text="${equipo.nombre}">Proyecto 1</td>
+                <td class="text-center">
+                    <!-- Botón para desplegar/contraer usuarios -->
+                    <button class="btn btn-outline-primary btn-sm"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            th:data-bs-target="'#collapse-equipo-' + ${equipo.id}"
+                            aria-expanded="false">
+                        Ver Usuarios
+                    </button>
+                </td>
+            </tr>
+
+            <!-- Fila contenedora del desplegable -->
+            <tr>
+                <td colspan="3" class="p-0 border-0">
+                    <div class="collapse p-3 bg-light" th:id="'collapse-equipo-' + ${equipo.id}">
+                        <table class="table table-sm table-bordered mb-0 bg-white">
+                            <thead class="table-secondary">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="usuario : ${equipo.usuarios}">
+                                <td th:text="${usuario.id}">1</td>
+                                <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
+                                <td th:text="${usuario.email}">ejemplo@email.com</td>
+                                <td>
+                                    <span th:if="${usuario.bloqueado}" class="text-danger">Bloqueado</span>
+                                    <span th:unless="${usuario.bloqueado}" class="text-success">Habilitado</span>
+                                </td>
+                                <td class="text-center">
+                                    <a th:href="@{/registrados/{id}(id=${usuario.id})}" class="btn btn-primary btn-sm">
+                                        Ver más detalles
+                                    </a>
+                                    <form th:if="${usuario.bloqueado}" th:action="@{/registrados/{id}/habilitar(id=${usuario.id})}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm">Habilitar</button>
+                                    </form>
+                                    <form th:unless="${usuario.bloqueado}" th:action="@{/registrados/{id}/bloquear(id=${usuario.id})}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-warning btn-sm">Bloquear</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <!-- Mensaje cuando el equipo no tiene usuarios -->
+                            <tr th:if="${#lists.isEmpty(equipo.usuarios)}">
+                                <td colspan="5" class="text-muted text-center py-2">Sin usuarios registrados en este equipo.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </th:block>
+        </tbody>
+    </table>
+</div>
+
+<div th:replace="~{fragments :: javascript}"></div>
+</body>
+</html>
