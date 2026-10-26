@@ -187,6 +187,82 @@ public class EquipoServiceTest {
     }
 
     @Test
+    public void actualizarEquipoCambiaElNombre() {
+        // GIVEN
+        // Un equipo en la base de datos
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+
+        // WHEN
+        // Le cambiamos el nombre
+        EquipoData actualizado = equipoService.actualizarEquipo(equipo.getId(), "Proyecto Renombrado");
+
+        // THEN
+        // El cambio se devuelve y queda guardado en la base de datos
+        assertThat(actualizado.getId()).isEqualTo(equipo.getId());
+        assertThat(actualizado.getNombre()).isEqualTo("Proyecto Renombrado");
+        assertThat(equipoService.recuperarEquipo(equipo.getId()).getNombre()).isEqualTo("Proyecto Renombrado");
+    }
+
+    @Test
+    public void actualizarEquipoMantieneSusUsuarios() {
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("user@ua");
+        usuario.setPassword("123");
+        usuario = usuarioService.registrar(usuario);
+        equipoService.añadirUsuarioAEquipo(equipo.getId(), usuario.getId());
+
+        equipoService.actualizarEquipo(equipo.getId(), "Proyecto Renombrado");
+
+        List<UsuarioData> usuarios = equipoService.usuariosEquipo(equipo.getId());
+        assertThat(usuarios).hasSize(1);
+        assertThat(usuarios.get(0).getId()).isEqualTo(usuario.getId());
+    }
+
+    @Test
+    public void actualizarEquipoConSuMismoNombreNoLanzaExcepcion() {
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+
+        EquipoData actualizado = equipoService.actualizarEquipo(equipo.getId(), "Proyecto 1");
+
+        assertThat(actualizado.getNombre()).isEqualTo("Proyecto 1");
+    }
+
+    @Test
+    public void actualizarEquipoInexistenteLanzaExcepcion() {
+        assertThatThrownBy(() -> equipoService.actualizarEquipo(1L, "Proyecto 1"))
+                .isInstanceOf(EquipoServiceException.class);
+    }
+
+    @Test
+    public void actualizarEquipoConNombreNuloOEnBlancoLanzaExcepcion() {
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+
+        assertThatThrownBy(() -> equipoService.actualizarEquipo(equipo.getId(), null))
+                .isInstanceOf(EquipoServiceException.class);
+        assertThatThrownBy(() -> equipoService.actualizarEquipo(equipo.getId(), ""))
+                .isInstanceOf(EquipoServiceException.class);
+        assertThatThrownBy(() -> equipoService.actualizarEquipo(equipo.getId(), "   "))
+                .isInstanceOf(EquipoServiceException.class);
+
+        // El nombre no ha cambiado
+        assertThat(equipoService.recuperarEquipo(equipo.getId()).getNombre()).isEqualTo("Proyecto 1");
+    }
+
+    @Test
+    public void actualizarEquipoConNombreDeOtroEquipoLanzaExcepcion() {
+        equipoService.crearEquipo("Proyecto 1");
+        EquipoData equipo2 = equipoService.crearEquipo("Proyecto 2");
+
+        assertThatThrownBy(() -> equipoService.actualizarEquipo(equipo2.getId(), "Proyecto 1"))
+                .isInstanceOf(EquipoServiceException.class)
+                .hasMessage("Equipo encontrado con ese nombre");
+
+        // El nombre no ha cambiado
+        assertThat(equipoService.recuperarEquipo(equipo2.getId()).getNombre()).isEqualTo("Proyecto 2");
+    }
+
+    @Test
     public void eliminarUsuarioQueNoPerteneceAlEquipoLanzaExcepcion() {
         EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
         UsuarioData usuario = new UsuarioData();
