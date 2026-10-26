@@ -140,6 +140,63 @@ public class EquipoServiceTest {
         usuarios = equipoService.usuariosEquipo(equipo.getId());
         assertThat(usuarios).isEmpty();
     }
-    
+
+    @Test
+    public void listadoEquiposIncluyeUsuariosDeCadaEquipo() {
+        // GIVEN
+        // Dos equipos, uno con un usuario y otro vacío
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("user@ua");
+        usuario.setPassword("123");
+        usuario = usuarioService.registrar(usuario);
+        EquipoData equipoConUsuario = equipoService.crearEquipo("Proyecto AAA");
+        equipoService.crearEquipo("Proyecto BBB");
+        equipoService.añadirUsuarioAEquipo(equipoConUsuario.getId(), usuario.getId());
+
+        // WHEN
+        List<EquipoData> equipos = equipoService.findAllOrdenadoPorNombre();
+
+        // THEN
+        // Cada DTO lleva su lista de usuarios
+        assertThat(equipos).hasSize(2);
+        assertThat(equipos.get(0).getUsuarios()).hasSize(1);
+        assertThat(equipos.get(0).getUsuarios().get(0).getEmail()).isEqualTo("user@ua");
+        assertThat(equipos.get(1).getUsuarios()).isEmpty();
+    }
+
+    @Test
+    public void listadoEquiposVacioDevuelveListaVacia() {
+        assertThat(equipoService.findAllOrdenadoPorNombre()).isEmpty();
+    }
+
+    @Test
+    public void crearEquipoConNombreEnBlancoLanzaExcepcion() {
+        assertThatThrownBy(() -> equipoService.crearEquipo(""))
+                .isInstanceOf(EquipoServiceException.class);
+        assertThatThrownBy(() -> equipoService.crearEquipo("   "))
+                .isInstanceOf(EquipoServiceException.class);
+    }
+
+    @Test
+    public void crearEquipoConNombreRepetidoLanzaExcepcion() {
+        equipoService.crearEquipo("Proyecto 1");
+
+        assertThatThrownBy(() -> equipoService.crearEquipo("Proyecto 1"))
+                .isInstanceOf(EquipoServiceException.class);
+        assertThat(equipoService.findAllOrdenadoPorNombre()).hasSize(1);
+    }
+
+    @Test
+    public void eliminarUsuarioQueNoPerteneceAlEquipoLanzaExcepcion() {
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("user@ua");
+        usuario.setPassword("123");
+        UsuarioData usuarioRegistrado = usuarioService.registrar(usuario);
+
+        assertThatThrownBy(() -> equipoService.eliminarUsuarioDelEquipo(equipo.getId(), usuarioRegistrado.getId()))
+                .isInstanceOf(EquipoServiceException.class)
+                .hasMessage("El usuario no pertenece al equipo");
+    }
 
 }
