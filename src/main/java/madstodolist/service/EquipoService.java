@@ -166,4 +166,11 @@ public class EquipoService {
         equipo.setNombre(nombre);
         return modelMapper.map(equipo, EquipoData.class);
     }
+
+    @Transactional
+    public void eliminarEquipo (Long equipoId){
+        Equipo equipo = equipoRepository.findById(equipoId)
+                .orElseThrow(() -> new EquipoServiceException("Equipo con id " + equipoId + " no encontrado"));
+        equipoRepository.delete(equipo);
+    }
 }

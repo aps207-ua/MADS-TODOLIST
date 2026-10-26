@@ -9,10 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpSession;
@@ -88,10 +85,26 @@ public class EquiposController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
         }
 
-        EquipoData equipoActual = equipoService.recuperarEquipo(idEquipo);
-
         equipoService.actualizarEquipo(idEquipo, nombre);
 
         return "redirect:/equipos";
+    }
+
+    @PostMapping("/equipos/{id}/delete")
+    public String deleteEquipo(@PathVariable("id") Long idEquipo, HttpSession session){
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario==null){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        UsuarioData usuarioActual = usuarioService.findById(idUsuario);
+        if (!usuarioActual.isAdmin()){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        equipoService.eliminarEquipo(idEquipo);
+
+        return "redirect:/equipos";
+
     }
 }

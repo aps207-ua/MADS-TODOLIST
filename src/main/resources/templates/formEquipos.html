@@ -50,22 +50,12 @@
                     Ver Usuarios
                 </button>
 
-                <!-- Botón Modificar (solo administradores) -->
-                <button th:if="${session.esAdmin != null and session.esAdmin}"
-                        class="btn btn-outline-warning btn-sm mr-1"
-                        type="button"
-                        data-toggle="collapse"
-                        th:attr="data-target='#editar-equipo-' + ${equipo.id}"
-                        aria-expanded="false">
-                    Modificar
-                </button>
-
                 <!-- Botón Salir del Equipo (Comprueba si la lista contiene la ID del usuario) -->
                 <form th:if="${#lists.contains(equipo.usuarios.![id], session.idUsuarioLogeado)}"
                       th:action="@{/equipos/{id}/salir(id=${equipo.id})}"
                       method="post"
                       class="d-inline">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Salir del Equipo</button>
+                    <button type="submit" class="btn btn-outline-danger btn-sm mr-1">Salir del Equipo</button>
                 </form>
 
                 <!-- Botón Unirse al Equipo -->
@@ -73,8 +63,29 @@
                       th:action="@{/equipos/{id}/unirse(id=${equipo.id})}"
                       method="post"
                       class="d-inline">
-                    <button type="submit" class="btn btn-outline-success btn-sm">Unirse al Equipo</button>
+                    <button type="submit" class="btn btn-outline-success btn-sm mr-1">Unirse al Equipo</button>
                 </form>
+
+                <!-- Acciones de administración, separadas de las del usuario -->
+                <span th:if="${session.esAdmin != null and session.esAdmin}"
+                      class="d-inline-block border-left pl-2 ml-1">
+                    <!-- Botón Modificar -->
+                    <button class="btn btn-outline-warning btn-sm mr-1"
+                            type="button"
+                            data-toggle="collapse"
+                            th:attr="data-target='#editar-equipo-' + ${equipo.id}"
+                            aria-expanded="false">
+                        Modificar
+                    </button>
+
+                    <!-- Botón Eliminar -->
+                    <form th:action="@{/equipos/{id}/delete(id=${equipo.id})}"
+                          method="post"
+                          class="d-inline"
+                          onsubmit="return confirm('¿Seguro que quieres eliminar este equipo?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                </span>
             </td>
         </tr>
 

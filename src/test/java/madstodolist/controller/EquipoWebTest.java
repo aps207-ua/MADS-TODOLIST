@@ -299,6 +299,64 @@ public class EquipoWebTest {
         verify(equipoService, never()).actualizarEquipo(anyLong(), anyString());
     }
 
+    @Test
+    public void listaEquiposMuestraBotonEliminarAAdmin() throws Exception {
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+
+        MockHttpSession session = sesionUsuario(1L);
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/equipos").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("action=\"/equipos/1/delete\"")))
+                .andExpect(content().string(containsString("Eliminar")));
+    }
+
+    @Test
+    public void listaEquiposNoMuestraBotonEliminarANoAdmin() throws Exception {
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+
+        MockHttpSession session = sesionUsuario(1L);
+        session.setAttribute("esAdmin", false);
+
+        this.mockMvc.perform(get("/equipos").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("action=\"/equipos/1/delete\""))));
+    }
+
+    @Test
+    public void eliminarEquipoComoAdminRedirigeAEquipos() throws Exception {
+        UsuarioData admin = usuario(1L, "Admin", "admin@ua");
+        admin.setAdmin(true);
+        when(usuarioService.findById(1L)).thenReturn(admin);
+
+        this.mockMvc.perform(post("/equipos/1/delete").session(sesionUsuario(1L)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos"));
+
+        verify(equipoService).eliminarEquipo(1L);
+    }
+
+    @Test
+    public void eliminarEquipoSinSerAdminDevuelve403() throws Exception {
+        when(usuarioService.findById(1L)).thenReturn(usuario(1L, "Usuario Test", "user@ua"));
+
+        this.mockMvc.perform(post("/equipos/1/delete").session(sesionUsuario(1L)))
+                .andExpect(status().isForbidden());
+
+        verify(equipoService, never()).eliminarEquipo(anyLong());
+    }
+
+    @Test
+    public void eliminarEquipoSinUsuarioLogeadoDevuelve403() throws Exception {
+        this.mockMvc.perform(post("/equipos/1/delete"))
+                .andExpect(status().isForbidden());
+
+        verify(equipoService, never()).eliminarEquipo(anyLong());
+    }
+
     private MockHttpSession sesionUsuario(Long id) {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("idUsuarioLogeado", id);
