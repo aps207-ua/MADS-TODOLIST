@@ -2,6 +2,7 @@ package madstodolist.controller;
 
 import madstodolist.dto.EquipoData;
 import madstodolist.dto.UsuarioData;
+import madstodolist.model.Usuario;
 import madstodolist.service.EquipoService;
 import madstodolist.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +73,25 @@ public class EquiposController {
         }
 
         equipoService.eliminarUsuarioDelEquipo(idEquipo, idUsuario); // Ajusta al nombre real de tu método de servicio
+        return "redirect:/equipos";
+    }
+
+    @PostMapping("/equipos/{id}/update")
+    public String updateEquipo(@PathVariable("id") Long idEquipo, @RequestParam("nombre") String nombre, HttpSession session){
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario==null){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        UsuarioData usuarioActual = usuarioService.findById(idUsuario);
+        if (!usuarioActual.isAdmin()){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        EquipoData equipoActual = equipoService.recuperarEquipo(idEquipo);
+
+        equipoService.actualizarEquipo(idEquipo, nombre);
+
         return "redirect:/equipos";
     }
 }

@@ -148,4 +148,22 @@ public class EquipoService {
         }
          equipo.removeUsuario(usuario);
     }
+
+    @Transactional
+    public EquipoData actualizarEquipo(Long equipoId, String nombre){
+        if (nombre == null || nombre.isBlank()) {
+            throw new EquipoServiceException("El nombre es nulo o caracter en blanco");
+        }
+
+        Equipo equipo = equipoRepository.findById(equipoId)
+                .orElseThrow(() -> new EquipoServiceException("Equipo con id " + equipoId + " no encontrado"));
+
+        Optional<Equipo> otro = equipoRepository.findByNombre(nombre);
+        if (otro.isPresent() && !otro.get().getId().equals(equipoId)) {
+            throw new EquipoServiceException("Equipo encontrado con ese nombre");
+        }
+
+        equipo.setNombre(nombre);
+        return modelMapper.map(equipo, EquipoData.class);
+    }
 }

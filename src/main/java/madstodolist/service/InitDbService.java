@@ -35,12 +35,6 @@ public class InitDbService {
         usuario.setPassword("123");
         usuarioRepository.save(usuario);
 
-        Usuario admin = new Usuario("admin@ua");
-        admin.setNombre("Administrador");
-        admin.setPassword("123");
-        admin.setAdmin(true);
-        usuarioRepository.save(admin);
-
         Tarea tarea1 = new Tarea(usuario, "Lavar coche");
         tareaRepository.save(tarea1);
 
@@ -49,11 +43,9 @@ public class InitDbService {
 
         Equipo equipo1 = new Equipo("Proyecto Alpha");
         equipo1.addUsuario(usuario);
-        equipo1.addUsuario(admin);
         equipoRepository.save(equipo1);
 
         Equipo equipo2 = new Equipo("Proyecto Beta");
-        equipo2.addUsuario(admin);
         equipoRepository.save(equipo2);
     }
 

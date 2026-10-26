@@ -234,6 +234,71 @@ public class EquipoWebTest {
                 .andExpect(content().string(containsString("Sin usuarios registrados en este equipo.")));
     }
 
+    @Test
+    public void listaEquiposMuestraOpcionModificarAAdmin() throws Exception {
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+
+        MockHttpSession session = sesionUsuario(1L);
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/equipos").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Modificar")))
+                .andExpect(content().string(containsString("editar-equipo-1")))
+                .andExpect(content().string(containsString("action=\"/equipos/1/update\"")))
+                .andExpect(content().string(containsString("value=\"Proyecto Alpha\"")));
+    }
+
+    @Test
+    public void listaEquiposNoMuestraOpcionModificarANoAdmin() throws Exception {
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+
+        MockHttpSession session = sesionUsuario(1L);
+        session.setAttribute("esAdmin", false);
+
+        this.mockMvc.perform(get("/equipos").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("editar-equipo-1"))))
+                .andExpect(content().string(not(containsString("action=\"/equipos/1/update\""))));
+    }
+
+    @Test
+    public void actualizarEquipoComoAdminRedirigeAEquipos() throws Exception {
+        UsuarioData admin = usuario(1L, "Admin", "admin@ua");
+        admin.setAdmin(true);
+        when(usuarioService.findById(1L)).thenReturn(admin);
+
+        this.mockMvc.perform(post("/equipos/1/update")
+                        .param("nombre", "Nuevo Nombre")
+                        .session(sesionUsuario(1L)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos"));
+
+        verify(equipoService).actualizarEquipo(1L, "Nuevo Nombre");
+    }
+
+    @Test
+    public void actualizarEquipoSinSerAdminDevuelve403() throws Exception {
+        when(usuarioService.findById(1L)).thenReturn(usuario(1L, "Usuario Test", "user@ua"));
+
+        this.mockMvc.perform(post("/equipos/1/update")
+                        .param("nombre", "Nuevo Nombre")
+                        .session(sesionUsuario(1L)))
+                .andExpect(status().isForbidden());
+
+        verify(equipoService, never()).actualizarEquipo(anyLong(), anyString());
+    }
+
+    @Test
+    public void actualizarEquipoSinUsuarioLogeadoDevuelve403() throws Exception {
+        this.mockMvc.perform(post("/equipos/1/update").param("nombre", "Nuevo Nombre"))
+                .andExpect(status().isForbidden());
+
+        verify(equipoService, never()).actualizarEquipo(anyLong(), anyString());
+    }
+
     private MockHttpSession sesionUsuario(Long id) {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("idUsuarioLogeado", id);
