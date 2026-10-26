@@ -263,6 +263,62 @@ public class EquipoServiceTest {
     }
 
     @Test
+    public void eliminarEquipoLoBorraDeLaBaseDeDatos() {
+        // GIVEN
+        // Un equipo en la base de datos
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+
+        // WHEN
+        // Lo eliminamos
+        equipoService.eliminarEquipo(equipo.getId());
+
+        // THEN
+        // Ya no se puede recuperar ni aparece en el listado
+        assertThatThrownBy(() -> equipoService.recuperarEquipo(equipo.getId()))
+                .isInstanceOf(EquipoServiceException.class);
+        assertThat(equipoService.findAllOrdenadoPorNombre()).isEmpty();
+    }
+
+    @Test
+    public void eliminarEquipoNoBorraLosDemasEquipos() {
+        EquipoData equipo1 = equipoService.crearEquipo("Proyecto 1");
+        EquipoData equipo2 = equipoService.crearEquipo("Proyecto 2");
+
+        equipoService.eliminarEquipo(equipo1.getId());
+
+        List<EquipoData> equipos = equipoService.findAllOrdenadoPorNombre();
+        assertThat(equipos).hasSize(1);
+        assertThat(equipos.get(0).getId()).isEqualTo(equipo2.getId());
+    }
+
+    @Test
+    public void eliminarEquipoConUsuariosNoBorraLosUsuarios() {
+        // GIVEN
+        // Un equipo con un usuario
+        EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("user@ua");
+        usuario.setPassword("123");
+        usuario = usuarioService.registrar(usuario);
+        equipoService.añadirUsuarioAEquipo(equipo.getId(), usuario.getId());
+
+        // WHEN
+        // Eliminamos el equipo
+        equipoService.eliminarEquipo(equipo.getId());
+
+        // THEN
+        // El usuario sigue existiendo y ya no pertenece a ningún equipo
+        assertThat(usuarioService.findById(usuario.getId())).isNotNull();
+        assertThat(equipoService.equiposUsuario(usuario.getId())).isEmpty();
+    }
+
+    @Test
+    public void eliminarEquipoInexistenteLanzaExcepcion() {
+        assertThatThrownBy(() -> equipoService.eliminarEquipo(1L))
+                .isInstanceOf(EquipoServiceException.class);
+    }
+
+    @Test
     public void eliminarUsuarioQueNoPerteneceAlEquipoLanzaExcepcion() {
         EquipoData equipo = equipoService.crearEquipo("Proyecto 1");
         UsuarioData usuario = new UsuarioData();
