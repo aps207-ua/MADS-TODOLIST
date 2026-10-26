@@ -67,12 +67,21 @@ public class EquipoService {
     public List<EquipoData> findAllOrdenadoPorNombre(){
         List<Equipo> equiposLista = equipoRepository.findAll();
         if(equiposLista.isEmpty()){
-            return new ArrayList<EquipoData>();
+            return new ArrayList<>();
         }
         equiposLista = Equipo.ordenarPorNombre(equiposLista);
-        List<EquipoData> equipoDataList= new ArrayList<>();
+
+        List<EquipoData> equipoDataList = new ArrayList<>();
         for(Equipo equipo : equiposLista){
-            equipoDataList.add(modelMapper.map(equipo, EquipoData.class));
+            EquipoData dto = modelMapper.map(equipo, EquipoData.class);
+
+            List<UsuarioData> usuariosDto = new ArrayList<>();
+            for (Usuario usuario : equipo.getUsuarios()) {
+                usuariosDto.add(modelMapper.map(usuario, UsuarioData.class));
+            }
+            dto.setUsuarios(usuariosDto);
+
+            equipoDataList.add(dto);
         }
         return equipoDataList;
     }

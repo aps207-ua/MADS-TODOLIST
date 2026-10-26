@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpSession;
@@ -25,16 +28,50 @@ public class EquiposController {
 
     @GetMapping("/equipos")
     public String listaEquipos(Model model, HttpSession session) {
-        // Validación de usuario autenticado desde HttpSession
         Long usuarioLogeado = (Long) session.getAttribute("idUsuarioLogeado");
         if (usuarioLogeado == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
         }
 
-        // Obtención de la lista de equipos ordenados
         List<EquipoData> equipos = equipoService.findAllOrdenadoPorNombre();
-        model.addAttribute("equipos", equipos);
 
+        model.addAttribute("equipos", equipos);
         return "formEquipos";
+    }
+
+    @PostMapping("/equipos/crear")
+    public String crearEquipo(@RequestParam("nombre") String nombre, HttpSession session) {
+        // Validación de usuario autenticado
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        // Creación del equipo en la capa de servicio
+        equipoService.crearEquipo(nombre);
+
+        // Redirección a la lista de equipos tras guardar
+        return "redirect:/equipos";
+    }
+    @PostMapping("/equipos/{id}/unirse")
+    public String unirseAEquipo(@PathVariable("id") Long idEquipo, HttpSession session) {
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        equipoService.añadirUsuarioAEquipo(idEquipo, idUsuario); // Ajusta al nombre real de tu método de servicio
+        return "redirect:/equipos";
+    }
+
+    @PostMapping("/equipos/{id}/salir")
+    public String salirDeEquipo(@PathVariable("id") Long idEquipo, HttpSession session) {
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        equipoService.eliminarUsuarioDelEquipo(idEquipo, idUsuario); // Ajusta al nombre real de tu método de servicio
+        return "redirect:/equipos";
     }
 }
