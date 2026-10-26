@@ -50,6 +50,16 @@
                     Ver Usuarios
                 </button>
 
+                <!-- Botón Modificar (solo administradores) -->
+                <button th:if="${session.esAdmin != null and session.esAdmin}"
+                        class="btn btn-outline-warning btn-sm mr-1"
+                        type="button"
+                        data-toggle="collapse"
+                        th:attr="data-target='#editar-equipo-' + ${equipo.id}"
+                        aria-expanded="false">
+                    Modificar
+                </button>
+
                 <!-- Botón Salir del Equipo (Comprueba si la lista contiene la ID del usuario) -->
                 <form th:if="${#lists.contains(equipo.usuarios.![id], session.idUsuarioLogeado)}"
                       th:action="@{/equipos/{id}/salir(id=${equipo.id})}"
@@ -67,6 +77,24 @@
                 </form>
             </td>
         </tr>
+
+            <!-- Fila desplegable con el formulario de modificación (solo administradores) -->
+            <tr th:if="${session.esAdmin != null and session.esAdmin}">
+                <td colspan="3" class="p-0 border-0">
+                    <div class="collapse p-3 bg-light" th:id="'editar-equipo-' + ${equipo.id}">
+                        <form th:action="@{/equipos/{id}/update(id=${equipo.id})}" method="post" class="form-inline">
+                            <label th:for="'nombre-equipo-' + ${equipo.id}" class="mr-2">Nuevo nombre</label>
+                            <input type="text"
+                                   th:id="'nombre-equipo-' + ${equipo.id}"
+                                   name="nombre"
+                                   th:value="${equipo.nombre}"
+                                   class="form-control form-control-sm mr-2"
+                                   required>
+                            <button type="submit" class="btn btn-warning btn-sm">Guardar cambios</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
 
             <!-- Fila contenedora del desplegable -->
             <tr>
