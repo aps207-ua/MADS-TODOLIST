@@ -300,6 +300,33 @@ public class EquipoWebTest {
     }
 
     @Test
+    public void listaEquiposMuestraBotonEliminarAAdmin() throws Exception {
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+
+        MockHttpSession session = sesionUsuario(1L);
+        session.setAttribute("esAdmin", true);
+
+        this.mockMvc.perform(get("/equipos").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("action=\"/equipos/1/delete\"")))
+                .andExpect(content().string(containsString("Eliminar")));
+    }
+
+    @Test
+    public void listaEquiposNoMuestraBotonEliminarANoAdmin() throws Exception {
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+
+        MockHttpSession session = sesionUsuario(1L);
+        session.setAttribute("esAdmin", false);
+
+        this.mockMvc.perform(get("/equipos").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("action=\"/equipos/1/delete\""))));
+    }
+
+    @Test
     public void eliminarEquipoComoAdminRedirigeAEquipos() throws Exception {
         UsuarioData admin = usuario(1L, "Admin", "admin@ua");
         admin.setAdmin(true);
