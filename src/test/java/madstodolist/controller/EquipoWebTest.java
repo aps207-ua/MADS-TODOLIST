@@ -24,7 +24,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -306,7 +305,7 @@ public class EquipoWebTest {
         admin.setAdmin(true);
         when(usuarioService.findById(1L)).thenReturn(admin);
 
-        this.mockMvc.perform(delete("/equipos/1/delete").session(sesionUsuario(1L)))
+        this.mockMvc.perform(post("/equipos/1/delete").session(sesionUsuario(1L)))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/equipos"));
 
@@ -317,7 +316,7 @@ public class EquipoWebTest {
     public void eliminarEquipoSinSerAdminDevuelve403() throws Exception {
         when(usuarioService.findById(1L)).thenReturn(usuario(1L, "Usuario Test", "user@ua"));
 
-        this.mockMvc.perform(delete("/equipos/1/delete").session(sesionUsuario(1L)))
+        this.mockMvc.perform(post("/equipos/1/delete").session(sesionUsuario(1L)))
                 .andExpect(status().isForbidden());
 
         verify(equipoService, never()).eliminarEquipo(anyLong());
@@ -325,7 +324,7 @@ public class EquipoWebTest {
 
     @Test
     public void eliminarEquipoSinUsuarioLogeadoDevuelve403() throws Exception {
-        this.mockMvc.perform(delete("/equipos/1/delete"))
+        this.mockMvc.perform(post("/equipos/1/delete"))
                 .andExpect(status().isForbidden());
 
         verify(equipoService, never()).eliminarEquipo(anyLong());
