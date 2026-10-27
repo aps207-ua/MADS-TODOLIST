@@ -1,104 +1,126 @@
-# Práctica 3: Integración continua y gestión de equipos
+# Práctica 3: Documentación técnica (historias 009 y 010)
 
-Este documento recoge el trabajo realizado desde la versión `v.1.1.0` hasta la versión actual `1.2.0-SNAPSHOT`. Se divide en dos partes: la configuración de integración continua y bases de datos, y la nueva funcionalidad de equipos, que permite crear equipos, unirse a ellos, salir de ellos y, en el caso del administrador, modificarlos y eliminarlos.
+Este documento describe lo que he implementado en las historias de usuario **009 Gestionar pertenencia al equipo** y **010 Gestión de equipos** de la versión `1.2.0`. Cada historia está dividida en dos issues: uno hecho con TDD para el servicio y el repositorio, y otro sin TDD para el controlador y la vista.
 
-Cada funcionalidad la he desarrollado en su propia rama y la he integrado en `main` mediante un pull request (del #17 al #36).
+## Base de datos PostgreSQL
 
-## Integración continua con GitHub Actions
+Tablas de la base de datos de desarrollo PostgreSQL (`mads`) en la versión final de la aplicación:
 
-He creado dos workflows en `.github/workflows`, y los dos se ejecutan en cada `push`:
+![Tablas de la base de datos PostgreSQL](img/practica3/postgres-tablas.png)
 
-- **`developer-tests.yml`**: lanza `./mvnw test` dentro de un contenedor `eclipse-temurin:17-jdk-alpine`. Usa la base de datos H2 en memoria y es el test rápido que comprueba que nada se ha roto. Al principio el workflow fallaba por la imagen de Java, así que lo cambié para que use un contenedor con JDK. También limité los permisos del token a `contents: read`.
-- **`integration-tests.yml`**: arranca un servicio `postgres:13` junto al contenedor de Java y lanza los tests con el perfil `postgres` (`./mvnw test -D spring.profiles.active=postgres`). Tiene un *health check* con `pg_isready` para que los tests no empiecen hasta que PostgreSQL esté listo.
+Las tablas nuevas de esta práctica son `equipos` y `equipo_usuario`. Esta última es la tabla intermedia de la relación muchos a muchos entre `Equipo` y `Usuario`, con las columnas `fk_equipo` y `fk_usuario`:
 
-Para comprobar que la integración continua detectaba los errores, subí a propósito un commit con un test que fallaba ("prueba fallo test") y después lo arreglé.
+![Tabla intermedia equipo_usuario](img/practica3/postgres-equipo-usuario.png)
 
-## Perfiles de base de datos
+La otra tabla `equipos` tiene los datos `id` y `nombre`
 
-He añadido la dependencia del driver de PostgreSQL en el `pom.xml` y dos ficheros de configuración:
+![Tabla equipo](img/practica3/postgres-equipo.png)
 
-- `src/main/resources/application-postgres.properties`: conexión a la base de datos `mads` en `localhost:5432`.
-- `src/test/resources/application-postgres.properties`: conexión a `mads_test`. El host, el puerto, el usuario y la contraseña se leen de variables (`POSTGRES_HOST`, `POSTGRES_PORT`, `DB_USER`, `DB_PASSWD`). Así el mismo fichero funciona en local y en GitHub Actions, donde el host es `postgres`.
+La tabla creada de `usuarios`(implementado en la anterior práctica) tiene los campos `id`, `nombre`, `password`, `admin`, `bloqueado` y `fecha_nacimiento`
 
-Por defecto la aplicación sigue usando el perfil `dev` con H2.
+![Tabla usuarios](img/practica3/postgres-usuario.png)
 
-## Modelo: entidad `Equipo`
+## Historia 009: Gestionar pertenencia al equipo
 
-La entidad `Equipo` la he desarrollado con TDD. Primero escribí los tests en `EquipoTest` (crear un equipo, guardarlo y buscarlo en la base de datos, comprobar la igualdad, la relación con los usuarios...) y después el código para que pasaran.
+Un usuario logeado puede crear un equipo, unirse a él y salir de él.
 
-- **Atributos:** `id` autogenerado y `nombre` obligatorio (`@NotNull`). Se guarda en la tabla `equipos`.
-- **Relación muchos a muchos con `Usuario`:** el lado propietario es `Equipo`, con la tabla intermedia `equipo_usuario` (columnas `fk_equipo` y `fk_usuario`). En `Usuario` está el lado inverso, con `@ManyToMany(mappedBy = "usuarios")`.
-- **`addUsuario` y `removeUsuario`:** actualizan las dos colecciones a la vez, porque JPA no mantiene sola la relación inversa en memoria.
-- **`equals` y `hashCode`:** comparan por `id` si los dos equipos lo tienen y, si no, por `nombre`.
-- **`ordenarPorNombre`:** ordena una lista de equipos alfabéticamente con un algoritmo *heap sort* (método `heapify`).
+### Endpoints
 
-En `EquipoRepository` he añadido `findAll()`, que devuelve una `List`, y `findByNombre()`, que se usa para impedir nombres repetidos. También he actualizado `clean-db.sql` para borrar las tablas `equipo_usuario` y `equipos` antes de cada test.
-
-## Servicio: `EquipoService`
-
-Los servicios también los he hecho con TDD, en `EquipoServiceTest`. Los métodos que modifican datos usan `@Transactional` y los de consulta, `@Transactional(readOnly = true)`. Los errores se comunican con una excepción propia, `EquipoServiceException`.
-
-| Método | Qué hace |
-|---|---|
-| `crearEquipo(nombre)` | Crea un equipo. Falla si el nombre está en blanco o ya existe. |
-| `recuperarEquipo(id)` | Devuelve el equipo o lanza una excepción si no existe. |
-| `findAllOrdenadoPorNombre()` | Lista todos los equipos ordenados e incluye en cada `EquipoData` su lista de usuarios. |
-| `añadirUsuarioAEquipo(equipo, usuario)` | Añade un usuario a un equipo. Comprueba que existan los dos. |
-| `eliminarUsuarioDelEquipo(equipo, usuario)` | Saca a un usuario del equipo. Falla si no pertenece a él. |
-| `equiposUsuario(usuario)` | Equipos de un usuario, ordenados por nombre. |
-| `usuariosEquipo(equipo)` | Usuarios de un equipo. |
-| `actualizarEquipo(equipo, nombre)` | Cambia el nombre. Comprueba que no esté en blanco y que no lo tenga otro equipo. |
-| `eliminarEquipo(equipo)` | Borra el equipo. Lanza una excepción si no existe. |
-
-En `actualizarEquipo` no hace falta llamar a `save()`. La entidad que devuelve `findById` dentro de la transacción está gestionada por JPA, y Hibernate guarda los cambios al hacer *commit* (lo que se llama *dirty checking*).
-
-Al hacer el método de eliminar un usuario de un equipo tuve un error porque me había olvidado de poner `@Transactional`. Sin él los cambios en la relación no se guardaban.
-
-Para que la vista pueda mostrar los miembros, he añadido a `EquipoData` una lista de `UsuarioData`.
-
-## Controlador y vistas
-
-### `EquiposController`
-
-Todos los endpoints comprueban primero que haya un usuario en sesión (`idUsuarioLogeado`). Si no lo hay, devuelven `403 Forbidden`. Los de administración comprueban además que el usuario sea administrador.
-
-| Ruta | Quién | Acción |
+| Ruta | Método del controlador | Método del servicio |
 |---|---|---|
-| `GET /equipos` | Usuario logeado | Muestra la lista de equipos (`formEquipos.html`). |
-| `POST /equipos/crear` | Usuario logeado | Crea un equipo. |
-| `POST /equipos/{id}/unirse` | Usuario logeado | Une al usuario al equipo. |
-| `POST /equipos/{id}/salir` | Usuario logeado | Saca al usuario del equipo. |
-| `POST /equipos/{id}/update` | Administrador | Cambia el nombre del equipo. |
-| `POST /equipos/{id}/delete` | Administrador | Elimina el equipo. |
+| `POST /equipos/crear` | `crearEquipo` | `crearEquipo(nombre)` |
+| `POST /equipos/{id}/unirse` | `unirseAEquipo` | `añadirUsuarioAEquipo(equipo, usuario)` |
+| `POST /equipos/{id}/salir` | `salirDeEquipo` | `eliminarUsuarioDelEquipo(equipo, usuario)` |
 
-Todas las acciones redirigen a `/equipos` cuando terminan.
+Los tres están en `EquiposController`, devuelven `403 Forbidden` si no hay usuario en sesión y redirigen a `/equipos` al terminar. El controlador no tiene más lógica: solo llama al método del servicio.
 
-El endpoint de eliminar lo hice primero con `@DeleteMapping`, pero lo cambié a `@PostMapping`. Un formulario HTML solo puede enviar `GET` o `POST`, así que con `DELETE` el botón de la vista nunca habría llegado al controlador. Con `POST` queda igual que el resto de acciones.
+### Servicio (TDD)
 
-### Vistas
+El método nuevo de esta historia es `eliminarUsuarioDelEquipo`. Lo desarrollé con TDD en `EquipoServiceTest`:
 
-- **Barra de navegación (`fragments.html`):** he añadido el enlace "Lista de equipos", visible para cualquier usuario logeado.
-- **`formEquipos.html`:** arriba hay un formulario para crear un equipo y debajo, una tabla con todos los equipos. Cada fila tiene estos botones:
-  - **Ver Usuarios:** despliega con un `collapse` de Bootstrap la lista de miembros del equipo, o el mensaje "Sin usuarios registrados en este equipo".
-  - **Unirse al Equipo / Salir del Equipo:** se muestra uno u otro según si el usuario ya es miembro. Para saberlo se comprueba si su id está en `equipo.usuarios`.
-  - **Modificar / Eliminar:** solo aparecen si `session.esAdmin` es verdadero, y están separados de las acciones del usuario. "Modificar" despliega un formulario con el nombre actual ya escrito. "Eliminar" pide confirmación antes de enviar el formulario.
-- **`listaRegistrados.html`:** en la lista de usuarios que ve el administrador he añadido una columna "Equipos" con un botón que despliega los equipos de cada usuario.
+```java
+@Transactional
+public void eliminarUsuarioDelEquipo(Long equipoId, Long usuarioId) {
+    Equipo equipo = equipoRepository.findById(equipoId)
+            .orElseThrow(() -> new EquipoServiceException("Equipo no encontrado"));
 
-### Datos de ejemplo
+    Usuario usuario = usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new EquipoServiceException("Usuario no encontrado"));
 
-En `InitDbService` (perfil `dev`) he añadido dos equipos de ejemplo: "Proyecto Alpha", con el usuario `user@ua`, y "Proyecto Beta", vacío.
+    if (!equipo.getUsuarios().contains(usuario)) {
+        throw new EquipoServiceException("El usuario no pertenece al equipo");
+    }
+    equipo.removeUsuario(usuario);
+}
+```
 
-## Tests
+`removeUsuario` actualiza las dos colecciones de la relación, porque JPA no mantiene sola la parte inversa en memoria. Al principio el cambio no se guardaba porque me había olvidado de `@Transactional`.
 
-En total el proyecto tiene 107 tests y todos pasan. Los nuevos de esta parte son:
+También he añadido excepciones a `crearEquipo` para nombres en blanco o repetidos.
 
-- **`EquipoTest` (5):** la entidad y el repositorio.
-- **`EquipoServiceTest` (21):** cada método del servicio, tanto los casos correctos como las excepciones. Por ejemplo: nombre en blanco o repetido al crear o actualizar, equipo o usuario inexistente, eliminar a un usuario que no pertenece al equipo, que al eliminar un equipo no se borren sus usuarios...
-- **`EquipoWebTest` (24):** el controlador con `MockMvc`, simulando `EquipoService` y `UsuarioService` con `@MockBean`. Comprueba que se devuelva 403 sin sesión o sin ser administrador, las redirecciones y que el servicio se llame con los parámetros correctos. También comprueba el HTML generado: qué botones aparecen según si el usuario es miembro o administrador, y que se muestren los miembros de cada equipo.
+### Vista
 
-También he tenido que actualizar algunos tests antiguos (`RegistradoWebTest` y `UsuarioWebTest`), porque las vistas ahora usan `EquipoService`.
+En `formEquipos.html` hay un formulario para crear equipos y una tabla con todos los equipos. Para cada fila se muestra **Unirse al Equipo** o **Salir del Equipo** según si el id del usuario está entre los miembros:
 
-## Uso de la inteligencia artificial
-Solo he usado la inteligencia artificial para corregir errores en el codigo y de compilacion.
+```html
+<form th:if="${#lists.contains(equipo.usuarios.![id], session.idUsuarioLogeado)}"
+      th:action="@{/equipos/{id}/salir(id=${equipo.id})}" method="post">
+```
 
-Todos los cambios propuestos los he revisado y probado antes de integrarlos.
+`equipo.usuarios.![id]` es una proyección de Thymeleaf que convierte la lista de usuarios en una lista de ids.
+
+### Tests
+
+- `EquipoServiceTest`: `eliminarUsuarioDelEquipo`, `eliminarUsuarioQueNoPerteneceAlEquipoLanzaExcepcion`, `crearEquipoConNombreEnBlancoLanzaExcepcion`, `crearEquipoConNombreRepetidoLanzaExcepcion`.
+- `EquipoWebTest`: redirecciones de crear, unirse y salir, el 403 sin sesión y qué botón aparece según si el usuario es miembro (`listaEquiposMuestraBotonSalirSiUsuarioEsMiembro`, `listaEquiposMuestraBotonUnirseSiUsuarioNoEsMiembro`).
+
+## Historia 010: Gestión de equipos (administrador)
+
+El administrador puede cambiar el nombre de un equipo y eliminarlo.
+
+### Endpoints
+
+| Ruta | Método del controlador | Método del servicio |
+|---|---|---|
+| `POST /equipos/{id}/update` | `updateEquipo` | `actualizarEquipo(equipo, nombre)` |
+| `POST /equipos/{id}/delete` | `deleteEquipo` | `eliminarEquipo(equipo)` |
+
+Además de la sesión, estos endpoints comprueban con `usuarioService.findById` que el usuario sea administrador. Si no lo es, devuelven 403.
+
+El borrado lo hice primero con `@DeleteMapping`, pero lo cambié a `@PostMapping` porque un formulario HTML solo envía `GET` o `POST`.
+
+### Servicio (TDD)
+
+```java
+@Transactional
+public EquipoData actualizarEquipo(Long equipoId, String nombre) {
+    if (nombre == null || nombre.isBlank()) {
+        throw new EquipoServiceException("El nombre es nulo o caracter en blanco");
+    }
+    Equipo equipo = equipoRepository.findById(equipoId)
+            .orElseThrow(() -> new EquipoServiceException("Equipo con id " + equipoId + " no encontrado"));
+
+    Optional<Equipo> otro = equipoRepository.findByNombre(nombre);
+    if (otro.isPresent() && !otro.get().getId().equals(equipoId)) {
+        throw new EquipoServiceException("Equipo encontrado con ese nombre");
+    }
+    equipo.setNombre(nombre);
+    return modelMapper.map(equipo, EquipoData.class);
+}
+```
+
+Dos detalles de este método:
+
+- No llama a `save()`. La entidad está gestionada por JPA dentro de la transacción y Hibernate guarda el cambio al hacer *commit* (*dirty checking*).
+- Al comprobar si el nombre está repetido, se ignora el propio equipo. Así se puede guardar el formulario sin cambiar el nombre.
+
+`eliminarEquipo` busca el equipo, lanza una excepción si no existe y lo borra con `equipoRepository.delete`. Los usuarios del equipo no se borran, solo las filas de `equipo_usuario`.
+
+### Vista
+
+Los botones **Modificar** y **Eliminar** solo se muestran si `session.esAdmin` es verdadero. "Modificar" despliega un formulario con el nombre actual ya escrito y "Eliminar" pide confirmación antes de enviar.
+
+### Tests
+
+- `EquipoServiceTest`: `actualizarEquipoCambiaElNombre`, `actualizarEquipoMantieneSusUsuarios`, `actualizarEquipoConSuMismoNombreNoLanzaExcepcion`, `actualizarEquipoConNombreDeOtroEquipoLanzaExcepcion`, `eliminarEquipoLoBorraDeLaBaseDeDatos`, `eliminarEquipoConUsuariosNoBorraLosUsuarios` y los casos de equipo inexistente.
+- `EquipoWebTest`: redirecciones como administrador, 403 sin sesión o sin ser administrador, y que los botones solo aparezcan al administrador.
